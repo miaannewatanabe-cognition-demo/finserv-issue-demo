@@ -1,0 +1,51 @@
+name: CodeQL Devin Fix Batches
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: "owner/repo to scan for open CodeQL alerts"
+        required: true
+        default: "miaannewatanabe-cognition-demo/finserv-issue-demo"
+      severities:
+        description: "Comma-separated severities to include"
+        required: false
+        default: "critical,high,medium"
+      batch_size:
+        description: "CodeQL alerts per Devin session"
+        required: false
+        default: "10"
+      max_batches:
+        description: "Maximum Devin sessions to launch this run"
+        required: false
+        default: "3"
+
+permissions:
+  contents: read
+  security-events: read
+
+jobs:
+  launch-devin-codeql-batches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Launch Devin sessions for CodeQL batches
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET_REPO: ${{ inputs.target_repo }}
+          SEVERITIES: ${{ inputs.severities }}
+          BATCH_SIZE: ${{ inputs.batch_size }}
+          MAX_BATCHES: ${{ inputs.max_batches }}
+          DEVIN_API_KEY: ${{ secrets.DEVIN_API_KEY }}
+          DEVIN_ORG_ID: ${{ secrets.DEVIN_ORG_ID }}
+          DEVIN_API_BASE_URL: ${{ secrets.DEVIN_API_BASE_URL }}
+          DEVIN_REPOS: ${{ secrets.DEVIN_REPOS }}
+          DEVIN_CREATE_AS_USER_ID: ${{ secrets.DEVIN_CREATE_AS_USER_ID }}
+        run: node .github/scripts/codeql-devin-batches.mjs
