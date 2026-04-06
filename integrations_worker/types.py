@@ -30,6 +30,26 @@ class WebhookDelivery:
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class PayoutStatus(enum.Enum):
+    STAGED = "staged"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+@dataclass
+class StagedPayout:
+    """A payout awaiting operator approval in the admin console."""
+
+    payout_id: str
+    partner_id: str
+    amount_cents: int
+    currency: str
+    recipient: str
+    status: PayoutStatus = PayoutStatus.STAGED
+    reviewed_at: datetime | None = None
+    reviewed_by: str | None = None
+
+
 @dataclass
 class PartnerConfig:
     """Configuration for a partner integration."""
