@@ -917,7 +917,7 @@ async function createTriage(issueId) {
   if (!issue) return { status: 404, payload: { error: "Issue not found" } };
 
   const session = await createTriageSession(issue);
-  const mode = getMode();
+  const mode = session.session_mode || getMode();
 
   await mutateState(async (state) => {
     const integrations = getIntegrations();
@@ -925,10 +925,12 @@ async function createTriage(issueId) {
       issueId: issue.id,
       kind: "triage",
       sessionId: session.session_id,
+      runtimeMode: mode,
       status: "running",
       createdAt: new Date().toISOString(),
       triage: mode === "mock" ? session.structured_output || mockTriage(issue) : session.structured_output || null,
-      sessionUrl: session.url || null
+      sessionUrl: session.url || null,
+      fallbackReason: session.fallback_reason || null
     };
     state.events.unshift(
       createEvent("triage_started", issue.id, `Started triage for #${issue.id} using Devin ${mode} mode.`)
@@ -960,6 +962,7 @@ async function createFix(issueId) {
   const existing = state.automationRuns[String(issue.id)];
   const triage = existing?.triage || mockTriage(issue);
   const session = await createFixSession(issue, triage);
+  const mode = session.session_mode || getMode();
 
   await mutateState(async (nextState) => {
     const integrations = getIntegrations();
@@ -967,14 +970,16 @@ async function createFix(issueId) {
       issueId: issue.id,
       kind: "fix",
       sessionId: session.session_id,
+      runtimeMode: mode,
       status: "running",
       createdAt: new Date().toISOString(),
       triage,
       sessionUrl: session.url || null,
-      pullRequestUrl: session.pull_request?.url || null
+      pullRequestUrl: session.pull_request?.url || null,
+      fallbackReason: session.fallback_reason || null
     };
     nextState.events.unshift(
-      createEvent("fix_started", issue.id, `Started autonomous fix session for #${issue.id}.`)
+      createEvent("fix_started", issue.id, `Started autonomous fix session for #${issue.id} using Devin ${mode} mode.`)
     );
     if (integrations.find((item) => item.id === "linear")?.connected) {
       await pushLinearEvent(
@@ -1005,6 +1010,7 @@ async function createFeatureFlagRemoval(flagKey) {
   if (!flag) return { status: 404, payload: { error: "Feature flag not found" } };
 
   const session = await createFeatureFlagRemovalSession(flag);
+  const mode = session.session_mode || getMode();
 
   await mutateState(async (state) => {
     const integrations = getIntegrations();
@@ -1013,13 +1019,15 @@ async function createFeatureFlagRemoval(flagKey) {
       flagKey: flag.key,
       kind: "feature_flag_removal",
       sessionId: session.session_id,
+      runtimeMode: mode,
       status: "running",
       createdAt: new Date().toISOString(),
       sessionUrl: session.url || null,
-      pullRequestUrl: session.pull_request?.url || null
+      pullRequestUrl: session.pull_request?.url || null,
+      fallbackReason: session.fallback_reason || null
     };
     state.events.unshift(
-      createEvent("flag_removal_started", 0, `Started feature-flag removal session for ${flag.key}.`)
+      createEvent("flag_removal_started", 0, `Started feature-flag removal session for ${flag.key} using Devin ${mode} mode.`)
     );
 
     if (integrations.find((item) => item.id === "linear")?.connected) {

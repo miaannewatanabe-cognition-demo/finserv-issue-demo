@@ -7,6 +7,9 @@ import {
 } from "./issue-engine.mjs";
 
 const DEFAULT_BASE_URL = process.env.DEVIN_API_BASE_URL || "https://api.devin.ai";
+const REQUEST_TIMEOUT_MS = 15000;
+const MAX_FETCH_RETRIES = 2;
+const RETRY_BASE_DELAY_MS = 800;
 
 function getKeyType() {
   if (process.env.DEVIN_API_KEY?.startsWith("cog_")) return "service_user";
@@ -47,21 +50,35 @@ function getSessionPath(sessionId) {
 }
 
 async function devinFetch(path, options = {}) {
-  const response = await fetch(`${DEFAULT_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.DEVIN_API_KEY}`,
-      ...(options.headers || {})
+  for (let attempt = 0; attempt <= MAX_FETCH_RETRIES; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${DEFAULT_BASE_URL}${path}`, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.DEVIN_API_KEY}`,
+          ...(options.headers || {})
+        }
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Devin API error ${response.status}: ${text}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      if (!shouldRetryRequest(error) || attempt === MAX_FETCH_RETRIES) {
+        throw error;
+      }
+      await sleep(RETRY_BASE_DELAY_MS * (attempt + 1));
+    } finally {
+      clearTimeout(timeout);
     }
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Devin API error ${response.status}: ${text}`);
   }
-
-  return response.json();
 }
 
 function createMockSession(prefix, issueId, extra = {}) {
@@ -74,9 +91,33 @@ function createMockSession(prefix, issueId, extra = {}) {
     url: `https://app.devin.ai/sessions/${prefix}-${issueId}-${now}`,
     created_at: new Date(now).toISOString(),
     updated_at: new Date(now).toISOString(),
+    session_mode: "mock",
+    fallback_reason: extra.fallback_reason || null,
     structured_output: extra.structured_output || null,
     pull_request: extra.pull_request || null
   };
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function shouldRetryRequest(error) {
+  if (!error) return false;
+  const message = String(error.message || "").toLowerCase();
+  return error.name === "AbortError" || message.includes("fetch failed") || message.includes("network");
+}
+
+function shouldFallbackToMock(error) {
+  if (!error) return false;
+  const message = String(error.message || "").toLowerCase();
+  return (
+    error.name === "AbortError" ||
+    message.includes("fetch failed") ||
+    message.includes("network") ||
+    message.includes("econnreset") ||
+    message.includes("etimedout")
+  );
 }
 
 export function getMode() {
@@ -131,17 +172,26 @@ export async function createTriageSession(issue) {
     });
   }
 
-  return devinFetch(getCreateSessionPath(), {
-    method: "POST",
-    body: JSON.stringify({
+  try {
+    return await devinFetch(getCreateSessionPath(), {
+      method: "POST",
+      body: JSON.stringify({
+        title: `Issue #${issue.id} triage`,
+        prompt: buildTriagePrompt(issue),
+        tags: ["cognition-demo", "triage", `issue-${issue.id}`],
+        structured_output_schema: TRIAGE_SCHEMA,
+        max_acu_limit: 2,
+        ...getSessionOptions()
+      })
+    });
+  } catch (error) {
+    if (!shouldFallbackToMock(error)) throw error;
+    return createMockSession("mock-triage", issue.id, {
       title: `Issue #${issue.id} triage`,
-      prompt: buildTriagePrompt(issue),
-      tags: ["cognition-demo", "triage", `issue-${issue.id}`],
-      structured_output_schema: TRIAGE_SCHEMA,
-      max_acu_limit: 2,
-      ...getSessionOptions()
-    })
-  });
+      structured_output: mockTriage(issue),
+      fallback_reason: error.message || "network_error"
+    });
+  }
 }
 
 export async function createFixSession(issue, triage) {
@@ -154,16 +204,27 @@ export async function createFixSession(issue, triage) {
     });
   }
 
-  return devinFetch(getCreateSessionPath(), {
-    method: "POST",
-    body: JSON.stringify({
+  try {
+    return await devinFetch(getCreateSessionPath(), {
+      method: "POST",
+      body: JSON.stringify({
+        title: `Issue #${issue.id} fix`,
+        prompt: buildFixPrompt(issue, triage),
+        tags: ["cognition-demo", "fix", `issue-${issue.id}`],
+        max_acu_limit: 8,
+        ...getSessionOptions()
+      })
+    });
+  } catch (error) {
+    if (!shouldFallbackToMock(error)) throw error;
+    return createMockSession("mock-fix", issue.id, {
       title: `Issue #${issue.id} fix`,
-      prompt: buildFixPrompt(issue, triage),
-      tags: ["cognition-demo", "fix", `issue-${issue.id}`],
-      max_acu_limit: 8,
-      ...getSessionOptions()
-    })
-  });
+      pull_request: {
+        url: `https://github.com/acme/finserv/pull/${issue.id}`
+      },
+      fallback_reason: error.message || "network_error"
+    });
+  }
 }
 
 export async function createFeatureFlagRemovalSession(flag) {
@@ -176,16 +237,27 @@ export async function createFeatureFlagRemovalSession(flag) {
     });
   }
 
-  return devinFetch(getCreateSessionPath(), {
-    method: "POST",
-    body: JSON.stringify({
-      title: `Remove feature flag ${flag.key}`,
-      prompt: buildFeatureFlagRemovalPrompt(flag),
-      tags: ["cognition-demo", "feature-flag", `flag-${flag.key.replaceAll(".", "-")}`],
-      max_acu_limit: 8,
-      ...getSessionOptions()
-    })
-  });
+  try {
+    return await devinFetch(getCreateSessionPath(), {
+      method: "POST",
+      body: JSON.stringify({
+        title: `Remove feature flag ${flag.key}`,
+        prompt: buildFeatureFlagRemovalPrompt(flag),
+        tags: ["cognition-demo", "feature-flag", `flag-${flag.key.replaceAll(".", "-")}`],
+        max_acu_limit: 8,
+        ...getSessionOptions()
+      })
+    });
+  } catch (error) {
+    if (!shouldFallbackToMock(error)) throw error;
+    return createMockSession("mock-flag-remove", flag.key.replaceAll(".", "-"), {
+      title: `Remove flag ${flag.key}`,
+      pull_request: {
+        url: `https://github.com/acme/finserv/pull/${Date.now() % 10000}`
+      },
+      fallback_reason: error.message || "network_error"
+    });
+  }
 }
 
 function mockStatusForRun(run) {
@@ -203,7 +275,7 @@ function mockStatusForRun(run) {
 }
 
 export async function getSession(sessionId, run) {
-  if (!hasApiKey()) {
+  if (!hasApiKey() || run?.runtimeMode === "mock") {
     const status = mockStatusForRun(run);
     return {
       session_id: sessionId,
