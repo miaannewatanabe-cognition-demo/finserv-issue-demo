@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   createFixSession,
@@ -31,6 +32,7 @@ const githubIssueLinkCache = {
   expiresAt: 0,
   pending: null
 };
+let ghTokenCache = undefined;
 
 function normalizeRepoSlug(value) {
   if (!value) return null;
@@ -127,7 +129,7 @@ async function inferCodeqlRepoFromSeededIssues() {
 }
 
 async function githubRequest(pathname) {
-  const token = process.env.GITHUB_TOKEN?.trim();
+  const token = process.env.GITHUB_TOKEN?.trim() || getGhAuthToken();
   const headers = {
     Accept: "application/vnd.github+json",
     "User-Agent": "issue-avalanche-dashboard"
@@ -142,6 +144,20 @@ async function githubRequest(pathname) {
     throw new Error(`github_http_${response.status}:${text.slice(0, 180)}`);
   }
   return response.json();
+}
+
+function getGhAuthToken() {
+  if (ghTokenCache !== undefined) return ghTokenCache;
+  try {
+    const token = execFileSync("gh", ["auth", "token"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
+    }).trim();
+    ghTokenCache = token || null;
+  } catch {
+    ghTokenCache = null;
+  }
+  return ghTokenCache;
 }
 
 function summarizeCodeqlRun(run) {
