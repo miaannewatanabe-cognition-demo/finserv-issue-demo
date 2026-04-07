@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Issue Avalanche</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Client A · FinServ Co</p>
+          <h1>Issue Avalanche</h1>
+          <p class="lede">
+            A Devin-powered control room for triaging stale GitHub and Linear issues, launching autonomous fix sessions,
+            and keeping engineering leads in the loop without babysitting.
+          </p>
+        </div>
+        <div class="hero-panel">
+          <div class="stat">
+            <span>Mode</span>
+            <strong id="mode-pill">Loading</strong>
+          </div>
+          <div class="stat">
+            <span>Candidate Queue</span>
+            <strong id="issue-count">0</strong>
+          </div>
+          <div id="integration-list" class="integration-list"></div>
+          <p id="status-banner" class="status-banner" role="status" aria-live="polite"></p>
+          <div class="hero-actions">
+            <button id="sync-button" class="button button-secondary">Refresh Devin Status</button>
+            <button id="reset-button" class="button button-ghost">Reset Demo State</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-nav" aria-label="Demo sections">
+        <button id="tab-button-issues" class="tab-button active" data-tab="issues" type="button" role="tab" aria-selected="true" aria-controls="tab-issues">
+          1) Issues
+        </button>
+        <button id="tab-button-flags" class="tab-button" data-tab="flags" type="button" role="tab" aria-selected="false" aria-controls="tab-flags">
+          2) Feature Flags
+        </button>
+        <button id="tab-button-codeql" class="tab-button" data-tab="codeql" type="button" role="tab" aria-selected="false" aria-controls="tab-codeql">
+          3) CodeQL
+        </button>
+      </section>
+
+      <section id="tab-issues" class="grid tab-panel active" data-tab-panel="issues" role="tabpanel" aria-labelledby="tab-button-issues">
+        <div class="panel panel-wide">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Backlog</p>
+              <h2>Ranked issues for autonomous execution</h2>
+            </div>
+            <p class="panel-note">Prioritized by impact, staleness, and quick-win likelihood.</p>
+          </div>
+          <div id="issue-list" class="issue-list"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Status Feed</p>
+              <h2>Automation updates</h2>
+            </div>
+          </div>
+          <div id="activity-list" class="activity-list"></div>
+        </div>
+      </section>
+
+      <section id="tab-flags" class="panel panel-flags tab-panel" data-tab-panel="flags" role="tabpanel" aria-labelledby="tab-button-flags">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Feature Flags</p>
+            <h2>Internal dashboard for feature flag removal</h2>
+          </div>
+          <p class="panel-note">Trigger Devin sessions that remove stale flags and open PRs.</p>
+        </div>
+        <div id="flag-list" class="flag-list"></div>
+      </section>
+
+      <section id="tab-codeql" class="panel panel-security-proof tab-panel" data-tab-panel="codeql" role="tabpanel" aria-labelledby="tab-button-codeql">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Security Automation</p>
+            <h2>CodeQL fix batch proof</h2>
+          </div>
+          <p class="panel-note">Shows the latest run from the GitHub Actions workflow used for CodeQL batching.</p>
+        </div>
+        <div id="codeql-proof" class="proof-card">
+          <p id="codeql-summary" class="proof-summary">Loading workflow proof...</p>
+          <p id="codeql-talk-track" class="proof-talk-track"></p>
+          <div class="proof-meta">
+            <span id="codeql-repo" class="meta-pill"></span>
+            <span id="codeql-status" class="meta-pill"></span>
+            <span id="codeql-branch" class="meta-pill"></span>
+          </div>
+          <div class="actions">
+            <a id="codeql-run-link" class="session-link" target="_blank" rel="noreferrer"></a>
+            <a id="codeql-workflow-link" class="session-link" target="_blank" rel="noreferrer"></a>
+            <a id="codeql-actions-link" class="session-link" target="_blank" rel="noreferrer"></a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <template id="issue-template">
+      <article class="issue-card">
+        <div class="issue-top">
+          <div>
+            <p class="issue-id"></p>
+            <h3 class="issue-title"></h3>
+          </div>
+          <div class="score-chip"></div>
+        </div>
+        <p class="issue-summary"></p>
+        <div class="meta-row">
+          <span class="meta-pill area-pill"></span>
+          <span class="meta-pill type-pill"></span>
+          <span class="meta-pill stale-pill"></span>
+          <span class="meta-pill source-pill"></span>
+          <a class="issue-source-link" target="_blank" rel="noreferrer"></a>
+        </div>
+        <div class="label-row"></div>
+        <div class="triage-box"></div>
+        <div class="actions">
+          <button class="button triage-action">Run Triage</button>
+          <button class="button button-secondary fix-action">Launch Fix Session</button>
+          <a class="session-link" target="_blank" rel="noreferrer"></a>
+        </div>
+      </article>
+    </template>
+
+    <template id="flag-template">
+      <article class="flag-card">
+        <div class="flag-top">
+          <div>
+            <p class="flag-key"></p>
+            <h3 class="flag-owner"></h3>
+          </div>
+          <span class="meta-pill flag-status"></span>
+        </div>
+        <p class="flag-description"></p>
+        <div class="actions">
+          <button class="button flag-remove-action">Remove Flag + Create PR</button>
+          <a class="session-link flag-session-link" target="_blank" rel="noreferrer"></a>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+  </html>

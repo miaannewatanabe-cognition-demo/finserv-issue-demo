@@ -1,0 +1,41 @@
+[
+  {
+    "key": "AUTH_FAILURE_CODES",
+    "description": "Legacy auth-failure toggle set used to gate circuit-breaker behavior; remove obsolete branches and keep only current policy.",
+    "owner": "integrations-worker-team",
+    "area": "integrations-worker",
+    "createdAt": "2025-07-10T10:00:00Z",
+    "paths": [
+      "integrations_worker/circuit_breaker.py",
+      "tests/test_circuit_breaker.py",
+      "README.md"
+    ],
+    "status": "active"
+  },
+  {
+    "key": "NON_RETRIABLE_STATUS_CODES",
+    "description": "Legacy non-retriable status-code toggle list in retry policy. Remove stale fallback behavior and preserve final retry semantics.",
+    "owner": "integrations-worker-team",
+    "area": "integrations-worker",
+    "createdAt": "2025-08-22T14:30:00Z",
+    "paths": [
+      "integrations_worker/retry_policy.py",
+      "integrations_worker/batch_retry.py",
+      "tests/test_retry_policy.py"
+    ],
+    "status": "active"
+  },
+  {
+    "key": "DEFAULT_AUTH_FAILURE_THRESHOLD",
+    "description": "Temporary rollout guard for partner auth circuit-breaker threshold. Remove hardcoded legacy path and keep stable threshold behavior.",
+    "owner": "integrations-worker-team",
+    "area": "integrations-worker",
+    "createdAt": "2025-09-04T09:10:00Z",
+    "paths": [
+      "integrations_worker/circuit_breaker.py",
+      "integrations_worker/batch_retry.py",
+      "tests/test_batch_retry.py"
+    ],
+    "status": "active"
+  }
+]

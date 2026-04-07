@@ -1,0 +1,135 @@
+[
+  {
+    "id": 1,
+    "title": "Invoice export silently drops rows when a custom date range crosses month boundaries",
+    "summary": "Finance users report missing rows in CSV exports for month-end reporting. Reproduces intermittently in the billing dashboard.",
+    "labels": [
+      "bug",
+      "billing",
+      "customer-reported",
+      "severity:high"
+    ],
+    "comments": 7,
+    "openedAt": "2025-11-03T16:20:00Z",
+    "updatedAt": "2026-02-18T09:45:00Z",
+    "author": "ops-analyst",
+    "area": "billing-web",
+    "type": "bug",
+    "source": {
+      "system": "github",
+      "url": "https://github.com/miaannewatanabe-cognition-demo/finserv-issue-demo/issues/1"
+    },
+    "githubIssueNumber": 1
+  },
+  {
+    "id": 2,
+    "title": "Add keyboard shortcuts for approving staged payouts",
+    "summary": "Internal operations team wants faster approval workflows in the admin console.",
+    "labels": [
+      "feature",
+      "admin-console",
+      "ux",
+      "good-first-decomp"
+    ],
+    "comments": 2,
+    "openedAt": "2025-12-14T11:30:00Z",
+    "updatedAt": "2026-01-08T18:10:00Z",
+    "author": "product-manager",
+    "area": "admin-console",
+    "type": "feature",
+    "source": {
+      "system": "github",
+      "url": "https://github.com/miaannewatanabe-cognition-demo/finserv-issue-demo/issues/2"
+    },
+    "githubIssueNumber": 2
+  },
+  {
+    "id": 3,
+    "title": "Webhook retry job spikes CPU after partner credential rotation",
+    "summary": "Batch retry worker enters a hot loop if remote 401s begin mid-run. SRE attached logs and a likely code path.",
+    "labels": [
+      "bug",
+      "platform",
+      "incident-followup",
+      "severity:critical"
+    ],
+    "comments": 12,
+    "openedAt": "2025-09-21T08:05:00Z",
+    "updatedAt": "2026-03-22T13:02:00Z",
+    "author": "sre-oncall",
+    "area": "integrations-worker",
+    "type": "bug",
+    "source": {
+      "system": "github",
+      "url": "https://github.com/miaannewatanabe-cognition-demo/finserv-issue-demo/issues/3"
+    },
+    "githubIssueNumber": 3
+  },
+  {
+    "id": 4,
+    "title": "Document and remove deprecated KYC flag path in onboarding flow",
+    "summary": "Legacy feature flag still gates an onboarding branch that should be dead. Cleanup is safe if docs are updated with the current flow.",
+    "labels": [
+      "tech-debt",
+      "cleanup",
+      "onboarding",
+      "good-first-decomp"
+    ],
+    "comments": 4,
+    "openedAt": "2025-08-04T10:00:00Z",
+    "updatedAt": "2025-11-29T22:15:00Z",
+    "author": "staff-eng",
+    "area": "onboarding",
+    "type": "cleanup",
+    "source": {
+      "system": "github",
+      "url": "https://github.com/miaannewatanabe-cognition-demo/finserv-issue-demo/issues/4"
+    },
+    "githubIssueNumber": 4
+  },
+  {
+    "id": 5,
+    "title": "Rate limit copy in API errors doesn't mention tenant quota resets",
+    "summary": "Developers keep opening support tickets because the 429 response does not explain when quota windows reset.",
+    "labels": [
+      "bug",
+      "docs-in-product",
+      "developer-experience",
+      "severity:medium"
+    ],
+    "comments": 5,
+    "openedAt": "2025-07-17T15:45:00Z",
+    "updatedAt": "2025-12-01T12:25:00Z",
+    "author": "support-engineer",
+    "area": "api-gateway",
+    "type": "bug",
+    "source": {
+      "system": "github",
+      "url": "https://github.com/miaannewatanabe-cognition-demo/finserv-issue-demo/issues/5"
+    },
+    "githubIssueNumber": 5
+  },
+  {
+    "id": 6,
+    "title": "Search filters in case review page reset when navigating back from detail view",
+    "summary": "Analysts lose their place repeatedly while reviewing fraud cases. Issue appears isolated to one route transition.",
+    "labels": [
+      "bug",
+      "frontend",
+      "customer-reported",
+      "severity:medium",
+      "good-first-decomp"
+    ],
+    "comments": 8,
+    "openedAt": "2025-05-09T09:00:00Z",
+    "updatedAt": "2026-02-02T17:40:00Z",
+    "author": "customer-success",
+    "area": "fraud-console",
+    "type": "bug",
+    "source": {
+      "system": "github",
+      "url": "https://github.com/miaannewatanabe-cognition-demo/finserv-issue-demo/issues/6"
+    },
+    "githubIssueNumber": 6
+  }
+]
