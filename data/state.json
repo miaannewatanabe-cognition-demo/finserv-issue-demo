@@ -1,128 +1,14 @@
 {
-  "automationRuns": {
-    "3": {
-      "issueId": 3,
-      "kind": "fix",
-      "sessionId": "6089b8c6fcc34b60a8a91e2b2c7c68f3",
-      "status": "paused",
-      "createdAt": "2026-04-07T02:04:19.681Z",
-      "triage": {
-        "scope": "medium",
-        "rationale": "Repo cloned and README identifies the relevant files (integrations_worker/batch_retry.py, http_client.py, retry_policy.py). The issue describes a hot-loop when remote 401s begin mid-run — this suggests a logic/regression in the batch retry worker's error handling or backoff policy rather than infrastructure. Fixing will touch the worker, HTTP client, and retry/backoff policy and requires tests and a PR; this is not a trivial one-line change but also not a cross-service large effort, so scope=medium.",
-        "test_plan": [
-          "Unit tests: simulate delivery handler receiving 401 and verify the worker marks delivery failed and continues without busy-looping.",
-          "Integration test: simulate many endpoints returning 401 mid-batch and assert worker enters exponential backoff or idle period instead of high CPU busy loop.",
-          "Load test: run the batch retry worker under a simulated high-failure scenario and measure CPU to confirm no spike.",
-          "Run full test suite: python -m pytest tests/ -v and lint: python -m ruff check .",
-          "After PR, deploy to staging and run end-to-end test with monitored CPU and logs; confirm SRE-observed pattern is gone."
-        ],
-        "proposed_plan": [
-          "Read integrations_worker/batch_retry.py and integrations_worker/http_client.py to locate the loop and error-path handling (confirm file paths: /home/ubuntu/repos/finserv-issue-demo/integrations_worker/*).",
-          "Add/adjust logic to ensure non-retriable 4xx responses (401) cause: (a) per-delivery failure marking and skip remaining retries for that delivery, and (b) if many partner requests are returning 401 due to credential rotation, the batch worker transitions to a backoff/idle state instead of busy-looping.",
-          "Update or centralize retry policy in integrations_worker/retry_policy.py to treat mid-run auth failures as either short-circuit non-retriable errors or to use exponential backoff with jitter at the batch-run level when a large fraction of requests are failing with 401.",
-          "Add unit tests and an integration-style test to tests/test_batch_retry.py that simulates: a) single delivery 401 mid-run and b) partner credentials rotated causing many 401s mid-batch, asserting the worker does not spike CPU and respects backoff.",
-          "Create a PR with the change, run lint/pytest (README suggests python -m pytest tests/ and ruff). If CI runs, iterate until CI passes; include a clear changelog/PR description and link SRE logs if allowed."
-        ],
-        "recommended_action": "needs_human_review",
-        "missing_information": [
-          "SRE logs referenced in the issue (full request/response traces and timestamps) — not provided in the repo clone.",
-          "Exact reproduction steps/environment: how the batch job is invoked in prod (concurrency, batch size, worker loop timing), and any relevant env/config used in production (retry limits, sleep intervals).",
-          "Whether 401 should be treated as globally non-retriable for that partner or per-delivery (policy decision).",
-          "Any feature flags or rollout constraints (can this be hotfixed directly to main or must go through staged rollout?).",
-          "Access to partner credential rotation timeline or secrets — to reproduce safely in tests (can be simulated)."
-        ],
-        "execution_confidence": "medium"
-      },
-      "sessionUrl": "https://app.devin.ai/sessions/6089b8c6fcc34b60a8a91e2b2c7c68f3",
-      "pullRequestUrl": "https://github.com/miaannewatanabe-cognition-demo/finserv-issue-demo/pull/17",
-      "lastCheckedAt": "2026-04-07T02:11:38.305Z",
-      "pausedEventEmitted": true
-    }
-  },
+  "automationRuns": {},
   "flagRuns": {},
-  "events": [
-    {
-      "id": "1775527737473-0sn03e",
-      "type": "attention_needed",
-      "issueId": 3,
-      "detail": "Issue #3 session is paused and awaiting instructions in Devin.",
-      "createdAt": "2026-04-07T02:08:57.473Z"
-    },
-    {
-      "id": "1775527460727-9hhmni",
-      "type": "slack_message",
-      "issueId": 3,
-      "detail": "Slack delivered: Slack #eng-automation: launched Devin fix for #3. Tracking session https://app.devin.ai/sessions/6089b8c6fcc34b60a8a91e2b2c7c68f3",
-      "createdAt": "2026-04-07T02:04:20.727Z"
-    },
-    {
-      "id": "1775527460416-tfhy8j",
-      "type": "linear_sync",
-      "issueId": 3,
-      "detail": "Linear delivered: Linear synced issue #3 -> In Progress. (MIA-27) [state -> In Progress]",
-      "createdAt": "2026-04-07T02:04:20.416Z"
-    },
-    {
-      "id": "1775527459681-vw5anf",
-      "type": "fix_started",
-      "issueId": 3,
-      "detail": "Started autonomous fix session for #3.",
-      "createdAt": "2026-04-07T02:04:19.681Z"
-    },
-    {
-      "id": "1775527411903-ijkwyt",
-      "type": "slack_message",
-      "issueId": 3,
-      "detail": "Slack delivered: Slack #eng-automation: triage completed for #3 (needs_human_review). @miaannewatanabe please approve next step.",
-      "createdAt": "2026-04-07T02:03:31.903Z"
-    },
-    {
-      "id": "1775527411658-q9m8mv",
-      "type": "linear_sync",
-      "issueId": 3,
-      "detail": "Linear delivered: Linear synced issue #3 -> Triaged. (MIA-27)",
-      "createdAt": "2026-04-07T02:03:31.658Z"
-    },
-    {
-      "id": "1775527411423-i2824r",
-      "type": "completed",
-      "issueId": 3,
-      "detail": "Triage completed for #3. Recommended action: needs_human_review.",
-      "createdAt": "2026-04-07T02:03:31.423Z"
-    },
-    {
-      "id": "1775527367964-rrvx55",
-      "type": "slack_message",
-      "issueId": 3,
-      "detail": "Slack delivered: Slack #eng-automation: starting triage for #3. I will post recommendation + confidence when complete.",
-      "createdAt": "2026-04-07T02:02:47.964Z"
-    },
-    {
-      "id": "1775527367681-6caii0",
-      "type": "linear_sync",
-      "issueId": 3,
-      "detail": "Linear delivered: Linear synced issue #3 -> Triage In Progress. (MIA-27)",
-      "createdAt": "2026-04-07T02:02:47.681Z"
-    },
-    {
-      "id": "1775527366924-26nfgo",
-      "type": "triage_started",
-      "issueId": 3,
-      "detail": "Started triage for #3 using Devin live mode.",
-      "createdAt": "2026-04-07T02:02:46.924Z"
-    }
-  ],
-  "linearIssueMap": {
-    "3": {
-      "id": "a2aad996-5136-48c5-8f91-ee1fc7a5b279",
-      "identifier": "MIA-27",
-      "url": "https://linear.app/mia-watanabe-cognition-demo/issue/MIA-27/github-3-webhook-retry-job-spikes-cpu-after-partner-credential",
-      "teamId": "b94a3ea5-9dcb-4530-be26-34689d3d895d"
-    }
-  },
-  "linearStateMap": {
-    "b94a3ea5-9dcb-4530-be26-34689d3d895d": {
-      "In Progress": "c13d8c52-06a5-49e7-96b2-4067f9413779"
-    }
-  }
+  "events": [],
+  "linearIssueMap": {},
+  "linearStateMap": {}
+}
+{
+  "automationRuns": {},
+  "flagRuns": {},
+  "events": [],
+  "linearIssueMap": {},
+  "linearStateMap": {}
 }
