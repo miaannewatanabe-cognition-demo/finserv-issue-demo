@@ -17,9 +17,6 @@ logger = logging.getLogger(__name__)
 # How many consecutive auth failures before the breaker trips.
 DEFAULT_AUTH_FAILURE_THRESHOLD = 3
 
-# Status codes considered authentication / authorisation failures.
-AUTH_FAILURE_CODES: frozenset[int] = frozenset({401, 403})
-
 
 class PartnerCircuitBreaker:
     """Tracks consecutive auth failures per partner and trips when threshold is hit."""
@@ -37,7 +34,7 @@ class PartnerCircuitBreaker:
         Increments the consecutive auth-failure counter on 401/403, resets it
         on any other status.  Trips the breaker when the threshold is reached.
         """
-        if status_code in AUTH_FAILURE_CODES:
+        if status_code in {401, 403}:
             count = self._failure_counts.get(partner_id, 0) + 1
             self._failure_counts[partner_id] = count
             if count >= self.threshold and not self._tripped.get(partner_id, False):
